@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
+using Photon.Realtime;
 using TMPro;
 
 public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아들이기
@@ -10,12 +11,21 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
     [SerializeField] TMP_InputField roomNameInputField;
     [SerializeField] TMP_Text errorText;
     [SerializeField] Text roomNameText;
+    [SerializeField] Transform roomListContent;
+    [SerializeField] GameObject roomListItemPrefab;
+
+    public static Launcher instance;
 
     // Start is called before the first frame update
     void Start()
     {
         Debug.Log("Connecting to Master");
         PhotonNetwork.ConnectUsingSettings(); // 설정한 포톤 서버에 따라 마스터 서버에 연결
+    }
+
+    private void Awake()
+    {
+        instance = this; 
     }
 
     public override void OnConnectedToMaster()
@@ -30,6 +40,9 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
         Debug.Log("Joined Lobby");
     }
 
+    /*
+     * 방 만들기
+     */
     public void CreateRoom()
     {
         if (string.IsNullOrEmpty(roomNameInputField.text))
@@ -52,6 +65,32 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
         MenuManager.Instance.OpenMenu("Error");
     }
 
+    /*
+     * 방 찾기
+     */
+    public void JoinRoom(RoomInfo info)
+    {
+        PhotonNetwork.JoinRoom(info.Name);
+        MenuManager.Instance.OpenMenu("Loading");
+    }
+
+    public override void OnRoomListUpdate(List<RoomInfo> roomList)
+    {
+        foreach(Transform trans in roomListContent)
+        {
+            Destroy(trans.gameObject); // 룸리스트가 업데이트 될 때마다 싹 지우기 
+        }
+
+        for(int i=0;i<roomList.Count;i++)
+        {
+            // prefab을 roomListContent 위치에 만들어주고, 그 프리펩은 i번째 룸리스트가 된다.
+            Instantiate(roomListItemPrefab, roomListContent).GetComponent<RoomListItem>().SetUp(roomList[i]);
+        }
+    }
+
+    /*
+     * 방 떠나기
+     */
     public void LeaveRoom()
     {
         PhotonNetwork.LeaveRoom();
