@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
 using TMPro;
+using System.Linq;
 
 public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아들이기
 {
@@ -13,6 +14,9 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
     [SerializeField] Text roomNameText;
     [SerializeField] Transform roomListContent;
     [SerializeField] GameObject roomListItemPrefab;
+    [SerializeField] Transform playerListContent;
+    [SerializeField] GameObject playerListItemPrefab;
+    [SerializeField] GameObject startGameButton;
 
     public static Launcher instance;
 
@@ -32,12 +36,16 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
     {
         Debug.Log("Connected to Master");
         PhotonNetwork.JoinLobby(); // 마스터 서버 연결 시 로비로 이동
+        PhotonNetwork.AutomaticallySyncScene = true; // 자동으로 모든 사람들의 scene을 통일시켜줌.
     }
 
     public override void OnJoinedLobby()
     {
         MenuManager.Instance.OpenMenu("Title");
         Debug.Log("Joined Lobby");
+
+        // 들어온 사람 이름 랜덤으로 숫자붙여서 정해주기
+        PhotonNetwork.NickName = "Player " + Random.Range(0, 100).ToString("0000");
     }
 
     /*
@@ -54,11 +62,6 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
 
     }
 
-    public override void OnJoinedRoom()
-    {
-        MenuManager.Instance.OpenMenu("Room");
-        roomNameText.text = PhotonNetwork.CurrentRoom.Name;
-    }
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
         errorText.text = "Room Creation Failed: " + message;
@@ -83,9 +86,44 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
 
         for(int i=0;i<roomList.Count;i++)
         {
+            if (roomList[i].RemovedFromList) // 사라진 방은 목록에 표시하지 않음.
+                continue;
+
             // prefab을 roomListContent 위치에 만들어주고, 그 프리펩은 i번째 룸리스트가 된다.
             Instantiate(roomListItemPrefab, roomListContent).GetComponent<RoomListItem>().SetUp(roomList[i]);
         }
+    }
+
+    /*
+     * 방에 들어왔을 때
+     */
+    public override void OnJoinedRoom()
+    {
+        MenuManager.Instance.OpenMenu("Room");
+        roomNameText.text = PhotonNetwork.CurrentRoom.Name; // 들어간 방 이름 표시
+
+        Player[] players = PhotonNetwork.PlayerList;
+        foreach(Transform child in playerListContent)
+        {
+            Destroy(child.gameObject); // 방에 들어가면 전에 있던 이름표들 전부 삭제
+        }
+
+        for(int i=0;i<players.Count();i++)
+        {
+            // prefab을 playerListContent 위치에 만들어주고, 그 프리펩은 i번째 플레이어리스트가 된다.
+            Instantiate(playerListItemPrefab, playerListContent).GetComponent<PlayerListItem>().SetUp(players[i]);
+        }
+        startGameButton.SetActive(PhotonNetwork.IsMasterClient); // 방장만 게임시작 버튼 누르기 가능
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient) // 방장이 나가서 방장이 바뀌었을 때
+    {
+        startGameButton.SetActive(PhotonNetwork.IsMasterClient); // 역시, 방장만 게임시작 버튼 누르기 가능
+    }
+
+    public void StartGame()
+    {
+        PhotonNetwork.LoadLevel(1); // 빌드의 scene 번호가 1인 gamescene 시작.
     }
 
     /*

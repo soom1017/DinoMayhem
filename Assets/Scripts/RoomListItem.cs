@@ -8,7 +8,7 @@ public class RoomListItem : MonoBehaviour
 {
     [SerializeField] TMP_Text roomItemText;
 
-    RoomInfo info; // 포톤 리얼타임의 방정보 기능
+    public RoomInfo info; // 포톤 리얼타임의 방정보 기능
 
     public void SetUp(RoomInfo _info)
     {
