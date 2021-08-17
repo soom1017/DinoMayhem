@@ -116,6 +116,12 @@ public class Launcher : MonoBehaviourPunCallbacks //다른 포톤 반응 받아�
         startGameButton.SetActive(PhotonNetwork.IsMasterClient); // 방장만 게임시작 버튼 누르기 가능
     }
 
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+        // 방에 새로운 플레이어가 들어오면 이름표 만들어주기 
+        Instantiate(playerListItemPrefab, playerListContent).GetComponent<PlayerListItem>().SetUp(newPlayer);
+    }
+
     public override void OnMasterClientSwitched(Player newMasterClient) // 방장이 나가서 방장이 바뀌었을 때
     {
         startGameButton.SetActive(PhotonNetwork.IsMasterClient); // 역시, 방장만 게임시작 버튼 누르기 가능
