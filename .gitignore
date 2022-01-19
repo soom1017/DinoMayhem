@@ -81,3 +81,6 @@ crashlytics-build.properties
 # Image Assets
 /[Aa]ssets/Images/
 /[Aa]ssets/Font/
+
+# Photon Server Settings
+/[Aa]ssets/Photon/PhotonRealtime/Code/Unity/
